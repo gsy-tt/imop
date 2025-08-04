@@ -12,7 +12,7 @@ jobs:
       - name: 加载仓库 https://github.com/gsy-tt/immortalwrt
         uses: actions/checkout@v4
         with:
-          repository: gsy-tt/immortalwrt  # 使用您的仓库
+          repository: gsy-tt/imop  # 使用您的仓库
           ref: openwrt-24.10  # 指定 openwrt-23.05 分支
           fetch-depth: 0  # 获取完整的仓库历史，确保所有提交可用
 
