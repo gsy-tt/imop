@@ -1,19 +1,22 @@
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-#include "ipq5332-base.dtsi"  // 引用芯片级基础设备树
+#include <dt-bindings/clock/qcom,ipq5332-gcc.h>
+#include "ipq5332.dtsi"  // 保持与芯片级dtsi的正确关联
+
 
 / {
-    model = "JDCloud BE6500";  // 规范设备型号命名
-    compatible = "jdcloud,be6500", "qcom,ipq5332";  // 优先设备厂商标识
+    model = "JDCloud BE6500";
+    compatible = "jdcloud,be6500", "qcom,ipq5332";
 
-    /* 电源调节器（为Wi-Fi等外设供电） */
+    /* 电源调节器（匹配IPQ5332 PMIC配置） */
     vreg_l12a: regulator-l12a {
-        compatible = "qcom,pm8005-regulator";
+        compatible = "qcom,pm8005-regulator";  // 确认PMIC型号匹配
         regulator-name = "vdd-0.8-cx-mx";
         regulator-min-microvolt = <800000>;
         regulator-max-microvolt = <800000>;
-        regulator-always-on;  // 核心供电，始终开启
+        regulator-always-on;
+        regulator-boot-on;  // 启动阶段即供电
     };
 
     vreg_l13a: regulator-l13a {
@@ -22,17 +25,17 @@
         regulator-min-microvolt = <1800000>;
         regulator-max-microvolt = <1800000>;
         regulator-always-on;
+        regulator-boot-on;
     };
 
-    /* 内存配置（1GB DDR4，起始地址0x40000000） */
+    /* 1GB DDR4内存（明确地址范围） */
     memory@40000000 {
         device_type = "memory";
-        reg = <0x0 0x40000000 0x0 0x40000000>;  // 修正地址格式（起始地址+大小）
+        reg = <0x0 0x40000000 0x0 0x40000000>;  // 0x40000000 = 1GB
     };
 
     chosen {
         bootargs = "console=ttyMSM0,115200n8 earlycon=msm_serial_dm,0x078af000 rootfstype=squashfs,jffs2 rootwait";
-        // 增加rootwait确保根文件系统就绪
     };
 
     aliases {
@@ -40,16 +43,18 @@
         led-failsafe = &led_power;
         led-running = &led_power;
         led-upgrade = &led_power;
-        serial0 = &blsp1_uart0;  // 对应base.dtsi中的串口节点名
-        ethernet0 = &gmac;  // 增加以太网别名，方便OpenWRT识别
+        serial0 = &blsp1_uart0;
+        ethernet0 = &gmac0;  // 修正网口控制器别名
+        wifi0 = &wlan_2g;    // 新增2.4G无线别名
+        wifi1 = &wlan_5g;    // 新增5G无线别名
     };
 
-    /* LED配置（按功能分组，规范标签命名） */
+    /* LED配置（补充RGB灯控制逻辑） */
     leds {
         compatible = "gpio-leds";
 
         led_power: power {
-            label = "jdcloud:green:power";  // 前缀统一为厂商名
+            label = "jdcloud:green:power";
             gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
             default-state = "on";
             retain-state-suspended;
@@ -60,13 +65,15 @@
             gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
             default-state = "off";
             retain-state-suspended;
+            linux,default-trigger = "phy0tpt";  // 关联2.4G无线状态
         };
 
-        led_wifi_5g: wifi-5g {
+        led_wifi_5g: wifi5g {
             label = "jdcloud:blue:wifi5g";
             gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
             default-state = "off";
             retain-state-suspended;
+            linux,default-trigger = "phy1tpt";  // 关联5G无线状态
         };
 
         led_joy: joy {
@@ -77,37 +84,37 @@
         };
     };
 
-    /* 按键配置（规范键值定义） */
+    /* 按键配置（规范功能映射） */
     keys {
         compatible = "gpio-keys";
 
         reset {
             label = "reset";
             gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
-            linux,code = <KEY_RESTART>;  // 标准重启键值
-            debounce-interval = <200>;  // 防抖动间隔
+            linux,code = <KEY_RESTART>;
+            debounce-interval = <200>;
         };
 
         joy {
             label = "joy";
             gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
-            linux,code = <KEY_PROG1>;  // 自定义功能键
+            linux,code = <KEY_FN>;  // 功能键映射，适配LED控制逻辑
             debounce-interval = <200>;
         };
     };
 };
 
-/* 串口配置（复用base.dtsi中的blsp1_uart0节点） */
+/* 启用调试串口（复用芯片级引脚定义） */
 &blsp1_uart0 {
-    pinctrl-0 = <&serial_0_pins>;  // 引用base.dtsi中定义的引脚组
+    pinctrl-0 = <&serial_0_pins>;
     pinctrl-names = "default";
-    status = "okay";  // 启用串口调试
+    status = "okay";
 };
 
-/* eMMC存储控制器（复用base.dtsi中的sdhc节点，修正配置） */
+/* 128GB eMMC配置（优化高速模式参数） */
 &sdhc {
     compatible = "qcom,ipq5332-sdhci", "qcom,sdhci-msm-v5";
-    reg = <0x07804000 0x1000>, <0x07805000 0x1000>;  // 与base.dtsi地址一致
+    reg = <0x07804000 0x1000>, <0x07805000 0x1000>;
     interrupts = <GIC_SPI 313 IRQ_TYPE_LEVEL_HIGH>,
                  <GIC_SPI 316 IRQ_TYPE_LEVEL_HIGH>;
     interrupt-names = "hc_irq", "pwr_irq";
@@ -115,121 +122,162 @@
              <&gcc GCC_SDCC1_APPS_CLK>,
              <&xo_board>;
     clock-names = "iface", "core", "xo";
-    bus-width = <8>;  // eMMC为8位总线
-    non-removable;  // 板载eMMC不可移除
-    no-1-8-v;  // 不支持1.8V电压
-    status = "okay";  // 启用eMMC
+    bus-width = <8>;
+    non-removable;
+    no-1-8-v;  // eMMC工作电压3.3V
+    cap-mmc-highspeed;  // 启用高速模式
+    mmc-hs200-1_8v;     // 支持HS200模式（需硬件支持）
+    mmc-ddr-1_8v;       // 支持DDR模式
+    max-frequency = <200000000>;  // 最高200MHz时钟
+    status = "okay";
 };
 
-/* USB 3.0控制器（补充标准配置） */
+/* USB 3.0控制器（修正PHY和控制器兼容属性） */
 &usb3 {
-    compatible = "qcom,ipq5332-dwc3";
+    compatible = "qcom,dwc3";  // 标准DWC3控制器兼容
     reg = <0x08800000 0x10000>;
     interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
     clocks = <&gcc GCC_USB30_MASTER_CLK>,
              <&gcc GCC_USB30_SLEEP_CLK>;
     clock-names = "core", "sleep";
-    dr_mode = "host";  // 主机模式
+    dr_mode = "host";
     status = "okay";
 
-    /* USB 3.0 PHY（物理层配置） */
+    /* USB 3.0 PHY配置（匹配IPQ5332 PHY型号） */
     usb3_phy: phy {
-        compatible = "qcom,ipq5332-usb-phy";
+        compatible = "qcom,ipq5332-usb3-phy";
         #phy-cells = <0>;
-        clocks = <&gcc GCC_USB30_MASTER_CLK>;
+        clocks = <&gcc GCC_USB30_MASTER_CLK>,
+                 <&xo_board>;
+        clock-names = "ref", "xo";
         status = "okay";
     };
 };
 
-/* 以太网控制器（基于GMAC，修正节点引用） */
-&gmac {
+/* 网络部分（修正QCA8386交换芯片拓扑） */
+&gmac0 {  // 假设芯片级dtsi中以太网控制器节点为gmac0
     status = "okay";
-    pinctrl-0 = <&gmac_pins>;  // 引用GMAC专用引脚组
+    pinctrl-0 = <&gmac0_pins>;
     pinctrl-names = "default";
-    phy-mode = "rgmii";  // 采用RGMII接口
-    phy-handle = <&phy0>;  // 关联PHY芯片
+    phy-mode = "rgmii";
+    phy-handle = <&qca8386>;  // 连接到交换芯片
 
-    /* 网口配置（2.5G网口，支持千兆/2.5G自适应） */
-    ports {
-        #address-cells = <1>;
-        #size-cells = <0>;
-
-        port@0 {
-            reg = <0>;
-            label = "wan";  // 明确标识为WAN口
-        };
-
-        port@1 {
-            reg = <1>;
-            label = "lan1";  // LAN口1
-        };
-
-        port@2 {
-            reg = <2>;
-            label = "lan2";  // LAN口2
-        };
+    /* GMAC与交换芯片的CPU端口连接 */
+    fixed-link {
+        speed = <2500>;  // 与交换芯片采用2.5Gbps连接
+        full-duplex;
+        pause;
     };
+};
 
-    /* MDIO总线（管理PHY芯片） */
-    mdio {
+/* MDIO总线（添加QCA8386交换芯片） */
+&mdio {  // 假设芯片级dtsi中MDIO控制器节点为mdio
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+
+    /* QCA8386 2.5G交换芯片（4个网口） */
+    qca8386: switch@0 {
+        compatible = "qca,qca8386";
+        reg = <0x0>;  // MDIO地址0
         #address-cells = <1>;
         #size-cells = <0>;
+        reset-gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;  // 交换芯片复位引脚
+        reset-assert-us = <10000>;
+        reset-deassert-us = <10000>;
 
-        phy0: ethernet-phy@0 {
-            reg = <0x0>;  // PHY地址0
-            compatible = "realtek,rtl8221b", "ethernet-phy-ieee802.3-c45";
-            max-speed = <2500>;  // 支持2.5G速率
-            reset-gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;  // PHY复位引脚（示例）
-            reset-assert-us = <10000>;  // 复位时长10ms
-            reset-deassert-us = <10000>;
+        /* 交换芯片网口配置（1WAN + 3LAN） */
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            port@0 {
+                reg = <0>;
+                label = "lan1";
+                phy-mode = "rgmii";
+            };
+
+            port@1 {
+                reg = <1>;
+                label = "lan2";
+                phy-mode = "rgmii";
+            };
+
+            port@2 {
+                reg = <2>;
+                label = "lan3";
+                phy-mode = "rgmii";
+            };
+
+            port@5 {
+                reg = <5>;
+                label = "wan";
+                phy-mode = "rgmii";
+            };
+
+            /* CPU端口（连接GMAC） */
+            port@6 {
+                reg = <6>;
+                label = "cpu";
+                phy-mode = "rgmii";
+                fixed-link {
+                    speed = <2500>;
+                    full-duplex;
+                    pause;
+                };
+            };
         };
     };
 };
 
-/* PCIe控制器（用于Wi-Fi 6/7射频卡） */
+/* 2.4G集成无线（IPQ5332内置） */
+&wlan_2g {  // 假设芯片级dtsi中内置无线节点为wlan_2g
+    compatible = "qcom,ath11k";
+    status = "okay";
+    qcom,chip-id = <0x0>;  // 内置2.4G芯片ID
+    qcom,board-id = <0x200>;  // 板载校准ID
+    vdd-0.8-cx-mx-supply = <&vreg_l12a>;
+    vdd-1.8-cx-supply = <&vreg_l13a>;
+    pinctrl-0 = <&wlan2g_pins>;
+    pinctrl-names = "default";
+};
+
+/* 5G无线（QCN6224 PCIe设备） */
 &pcie0 {
     compatible = "qcom,ipq5332-pcie";
-    reg = <0x10000000 0x1000000>;  // PCIe控制器地址
+    reg = <0x10000000 0x1000000>;
     interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
     clocks = <&gcc GCC_PCIE0_CLK>,
              <&gcc GCC_PCIE0_AHB_CLK>;
     clock-names = "core", "iface";
-    num-lanes = <1>;  // 1条PCIe通道
+    num-lanes = <1>;
     status = "okay";
+    pinctrl-0 = <&pcie0_pins>;
+    pinctrl-names = "default";
 
-    /* QCN6224 Wi-Fi芯片（5G/6G频段） */
-    qcn6224: wifi@0,0 {
+    wlan_5g: wifi@0,0 {
         compatible = "qcom,ath11k";
-        reg = <0 0 0 0 0>;  // PCIe设备地址格式
+        reg = <0 0 0 0 0>;
         interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
         interrupt-parent = <&pcie0>;
-        qcom,chip-id = <0x6224>;  // 芯片ID
-        qcom,board-id = <0x1000>;  // 板载ID（需校准）
-        qcom,mac-offset = <0x0>;  // MAC地址偏移
-        vdd-0.8-cx-mx-supply = <&vreg_l12a>;  // 供电关联
+        qcom,chip-id = <0x6224>;  // QCN6224芯片ID
+        qcom,board-id = <0x1000>;  // 板载校准ID（需实际校准）
+        qcom,mac-offset = <0x0>;
+        vdd-0.8-cx-mx-supply = <&vreg_l12a>;
         vdd-1.8-cx-supply = <&vreg_l13a>;
-        power-domains = <&gcc 0>;  // 修正为base.dtsi中的gcc节点
+        power-domains = <&gcc 0>;
         status = "okay";
     };
 };
 
-/* 引脚控制器（整理WAN/LAN引脚配置） */
+/* 引脚控制器（补充PCIe和无线引脚） */
 &tlmm {
-    gmac_pins: gmac-state {
-        /* GMAC共用引脚（RGMII时钟等） */
+    /* GMAC引脚（RGMII接口） */
+    gmac0_pins: gmac0-state {
         mux {
-            pins = "gpio5",  // RGMII_REF_CLK
-                   "gpio4";  // RGMII_MDC
-            function = "rgmii";
-            drive-strength = <16>;  // 增强驱动能力（16mA）
-            bias-disable;  // 禁用上下拉
-        };
-    };
-
-    wan_pins: wan-state {
-        /* WAN口RGMII数据引脚 */
-        mux {
-            pins = "gpio6",  // RGMII_TXD0
+            pins = "gpio4",  // RGMII_MDC
+                   "gpio5",  // RGMII_MDIO
+                   "gpio6",  // RGMII_TXD0
                    "gpio7",  // RGMII_TXD1
                    "gpio8",  // RGMII_TXD2
                    "gpio9",  // RGMII_TXD3
@@ -242,29 +290,38 @@
                    "gpio16", // RGMII_RX_CTRL
                    "gpio17"; // RGMII_RX_CLK
             function = "rgmii";
-            drive-strength = <16>;
+            drive-strength = <16>;  // 16mA驱动
             bias-disable;
         };
     };
 
-    lan_pins: lan-state {
-        /* LAN口RGMII数据引脚 */
+    /* PCIe引脚（复位和使能） */
+    pcie0_pins: pcie0-state {
         mux {
-            pins = "gpio18", // RGMII_TXD0
-                   "gpio19", // RGMII_TXD1
-                   "gpio20", // RGMII_TXD2
-                   "gpio21", // RGMII_TXD3
-                   "gpio22", // RGMII_TX_CTRL
-                   "gpio23", // RGMII_TX_CLK
-                   "gpio24", // RGMII_RXD0
-                   "gpio25", // RGMII_RXD1
-                   "gpio26", // RGMII_RXD2
-                   "gpio27", // RGMII_RXD3
-                   "gpio28", // RGMII_RX_CTRL
-                   "gpio29"; // RGMII_RX_CLK
-            function = "rgmii";
-            drive-strength = <16>;
-            bias-disable;
+            pins = "gpio48",  // PCIe RST_N
+                   "gpio49";  // PCIe CLKREQ
+            function = "pcie";
+            drive-strength = <8>;
+            bias-pull-up;  // 复位引脚默认上拉
         };
+    };
+
+    /* 2.4G无线引脚（控制） */
+    wlan2g_pins: wlan2g-state {
+        mux {
+            pins = "gpio50",  // WLAN 2G RST
+                   "gpio51";  // WLAN 2G EN
+            function = "wlan";
+            drive-strength = <8>;
+            bias-pull-up;
+        };
+    };
+};
+
+/* 修正CPU频率（匹配1.5GHz规格） */
+&cpu_opp_table {
+    opp-1500000000 {
+        opp-hz = /bits/ 64 <1500000000>;
+        clock-latency-ns = <200000>;
     };
 };
