@@ -73,7 +73,7 @@ jobs:
       - name: 恢复.config文件
         run: |
           cp .config-bak .config
-          make -j1 V=s olddefconfig
+          
 
       - name: 检查并安装编译所需的依赖工具
         run: |
