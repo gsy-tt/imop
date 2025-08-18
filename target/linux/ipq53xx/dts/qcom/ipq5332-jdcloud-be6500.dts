@@ -305,6 +305,8 @@
         reg = <0 0 0 0 0>; // PCIe地址映射
         qcom,chip-id = <0x6224>; // QCN6224芯片ID
         qcom,board-id = <0x1000>; // 校准ID
+        qcom,160mhz-support = <1>;
+        qcom,mlo-support = <1>;
         vdd-0.8-cx-mx-supply = <&vreg_l12a>;
         vdd-1.8-cx-supply = <&vreg_l13a>;
         status = "okay";
