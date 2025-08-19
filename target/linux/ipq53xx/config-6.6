@@ -254,6 +254,12 @@ CONFIG_DEFERRED_STRUCT_PAGE_INIT=n
 CONFIG_IDLE_PAGE_TRACKING=n
 CONFIG_ZONE_DMA=y
 CONFIG_ZONE_DMA32=y
+
+#
+# Scheduler features (添加缺失的调度器配置)
+#
+CONFIG_UCLAMP_TASK=n  # 禁用utilization clamping for RT/FAIR tasks
+CONFIG_UCLAMP_TASK_GROUP=n  # 禁用task group utilization clamping
 CONFIG_NET_SCH_FQ=y
 CONFIG_NET_SCH_FQ_CODEL=y
 CONFIG_TCP_CONG_BBR=y
