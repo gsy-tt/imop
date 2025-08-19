@@ -47,8 +47,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            build_dir/toolchain-*
-            staging_dir/toolchain-*
+            $(find build_dir -name "toolchain-*" -type d 2>/dev/null | tr '\n' '\n')
+            $(find staging_dir -name "toolchain-*" -type d 2>/dev/null | tr '\n' '\n')
           key: ${{ runner.os }}-openwrt-toolchain-${{ hashFiles('.config', 'toolchain/Makefile') }}
           restore-keys: |
             ${{ runner.os }}-openwrt-toolchain-
@@ -57,7 +57,7 @@ jobs:
       - name: 检查工具链是否存在
         id: check-toolchain
         run: |
-          if [ -f "build_dir/toolchain-*/.built" ]; then
+          if find build_dir -name "toolchain-*" -type d -exec test -f {}/.built \; -quit; then
             echo "toolchain_ready=true" >> $GITHUB_OUTPUT
           else
             echo "toolchain_ready=false" >> $GITHUB_OUTPUT
@@ -75,7 +75,7 @@ jobs:
         if: steps.check-toolchain.outputs.toolchain_ready == 'false'
         run: |
           make toolchain/compile -j$(nproc) V=sc CC="ccache gcc" CXX="ccache g++"
-          touch build_dir/toolchain-*/.built
+          find build_dir -name "toolchain-*" -type d -exec touch {}/.built \;
       
       - name: 上传工具链缓存（仅当新编译时）
         if: steps.check-toolchain.outputs.toolchain_ready == 'false'
@@ -83,8 +83,8 @@ jobs:
         with:
           name: toolchain-cache
           path: |
-            build_dir/toolchain-*
-            staging_dir/toolchain-*
+            $(find build_dir -name "toolchain-*" -type d 2>/dev/null | tr '\n' '\n')
+            $(find staging_dir -name "toolchain-*" -type d 2>/dev/null | tr '\n' '\n')
           retention-days: 30
       
       - name: 清理系统（在缓存之后）
@@ -123,12 +123,19 @@ jobs:
       - name: Collect artifacts
         id: collect
         run: |
-          cd bin/targets/*/*
-          FILES=$(ls *.bin *.img.gz 2>/dev/null || true)
-          echo "artifact_files=$(echo $FILES | tr ' ' ',')" >> $GITHUB_ENV
-          echo "artifact_count=$(echo $FILES | wc -w)" >> $GITHUB_ENV
-          find bin/ -name "*.bin"
-          find bin/ -name "*.img*"
+          # 使用find命令查找所有目标目录
+          TARGET_DIR=$(find bin/targets -mindepth 2 -maxdepth 2 -type d | head -1)
+          if [ -n "$TARGET_DIR" ]; then
+            cd "$TARGET_DIR"
+            FILES=$(find . -name "*.bin" -o -name "*.img.gz" | sed 's|^\.\/||' | tr '\n' ' ')
+            echo "artifact_files=$(echo $FILES | tr ' ' ',')" >> $GITHUB_ENV
+            echo "artifact_count=$(echo $FILES | wc -w)" >> $GITHUB_ENV
+            find bin/ -name "*.bin"
+            find bin/ -name "*.img*"
+          else
+            echo "artifact_files=" >> $GITHUB_ENV
+            echo "artifact_count=0" >> $GITHUB_ENV
+          fi
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
@@ -136,9 +143,9 @@ jobs:
         with:
           name: be6500-firmware
           path: |
-            bin/targets/*/*/*.bin
-            bin/targets/*/*/*.img.gz
-            bin/targets/*/*/packages
+            $(find bin/targets -name "*.bin" 2>/dev/null | tr '\n' '\n')
+            $(find bin/targets -name "*.img.gz" 2>/dev/null | tr '\n' '\n')
+            $(find bin/targets -type d -name "packages" 2>/dev/null | tr '\n' '\n')
           retention-days: 7
 
       - name: Display firmware information
