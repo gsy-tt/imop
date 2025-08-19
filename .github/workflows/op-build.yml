@@ -43,7 +43,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-openwrt-feeds-
       
-      - name: 缓存工具链
+      - name: 缓存工具链（快速恢复）
         uses: actions/cache@v4
         with:
           path: |
@@ -52,51 +52,33 @@ jobs:
           key: ${{ runner.os }}-openwrt-toolchain-${{ hashFiles('.config', 'toolchain/Makefile') }}
           restore-keys: |
             ${{ runner.os }}-openwrt-toolchain-
+            ${{ runner.os }}-openwrt-
       
-      - name: 配置 ccache
+      - name: 检查工具链是否存在
+        id: check-toolchain
         run: |
-          echo 'export CCACHE_DIR=~/.ccache' >> $GITHUB_ENV
-          echo 'export CCACHE_MAXSIZE=5G' >> $GITHUB_ENV
-          echo 'export CCACHE_COMPRESS=1' >> $GITHUB_ENV
-          echo 'export CCACHE_COMPRESSLEVEL=6' >> $GITHUB_ENV
-          ccache -M 5G
-          ccache -z
-      
-      - name: 缓存 ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-openwrt-ccache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-openwrt-ccache-
-      
-      - name: 编译 OpenWrt 构建系统所需的基础工具
-        run: |
-          make tools/compile -j$(nproc) V=sc CC="ccache gcc" CXX="ccache g++"
-      
-      - name: 检查是否存在工具链缓存
-        id: check-toolchain-cache
-        run: |
-          if [ -d "build_dir/toolchain-*" ]; then
-            echo "cache_exists=true" >> $GITHUB_OUTPUT
+          if [ -f "build_dir/toolchain-*/.built" ]; then
+            echo "toolchain_ready=true" >> $GITHUB_OUTPUT
           else
-            echo "cache_exists=false" >> $GITHUB_OUTPUT
+            echo "toolchain_ready=false" >> $GITHUB_OUTPUT
           fi
       
-      - name: 下载工具链缓存
-        if: steps.check-toolchain-cache.outputs.cache_exists == 'false'
+      - name: 尝试下载跨运行缓存
+        if: steps.check-toolchain.outputs.toolchain_ready == 'false'
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: toolchain-cache
           path: ./
       
-      - name: 编译交叉编译工具链
-        if: steps.check-toolchain-cache.outputs.cache_exists == 'false'
+      - name: 编译工具链（如果需要）
+        if: steps.check-toolchain.outputs.toolchain_ready == 'false'
         run: |
           make toolchain/compile -j$(nproc) V=sc CC="ccache gcc" CXX="ccache g++"
+          touch build_dir/toolchain-*/.built
       
-      - name: 上传工具链缓存
-        if: steps.check-toolchain-cache.outputs.cache_exists == 'false'
+      - name: 上传工具链缓存（仅当新编译时）
+        if: steps.check-toolchain.outputs.toolchain_ready == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: toolchain-cache
