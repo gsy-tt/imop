@@ -1,4 +1,3 @@
-
 define Device/FitImage
 	KERNEL_SUFFIX := -uImage.itb
 	#KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-ipq5332-jdcloud-be6500.dtb
@@ -234,6 +233,7 @@ define Device/ipq5332-jdcloud-be6500
 	#IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | pad-to 64k | uboot-image -T factory -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) -d /home/teng/immortalwrt/build_dir/target-aarch64_cortex-a53_musl/linux-ipq807x_generic/linux-5.15.185/arch/arm64/boot/dts/qcom/ipq5332-jdcloud-be6500.dtb | check-size
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | sign-image | sysupgrade-tar
 	KERNEL := kernel-bin | libdeflate-gzip | fit gzip /home/teng/immortalwrt/build_dir/target-aarch64_cortex-a53_musl/linux-ipq807x_generic/linux-5.15.185/arch/arm64/boot/dts/qcom/ipq5332-jdcloud-be6500.dtb -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) -s $(FDT_LOADADDR)
+    DEVICE_PACKAGES := kmod-usb3 kmod-leds-gpio kmod-ath11k-ahb kmod-ath11k-pci ath11k-firmware-qcn9074 wpad-openssl uboot-envtools kmod-gpio-button-hotplug kmod-fs-f2fs f2fsck mkf2fs
 endef
 TARGET_DEVICES += ipq5332-jdcloud-be6500
 #$(eval $(call Device,ipq5332-jdcloud-be6500))
