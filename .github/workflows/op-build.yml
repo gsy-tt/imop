@@ -46,15 +46,15 @@ jobs:
 
       - name: 编译工具链
         run: |
-          make toolchain/compile -j$(nproc) V=sc CC="ccache gcc" CXX="ccache g++"
+          make toolchain/compile -j$(nproc) V=sc 
       
       - name: 编译内核和目标系统
         run: |
-          make target/compile -j$(nproc) V=sc CC="ccache gcc" CXX="ccache g++"
+          make target/compile -j$(nproc) V=sc 
       
       - name: 编译所有软件包
         run: |
-          make package/compile -j1 V=sc CC="ccache gcc" CXX="ccache g++"
+          make package/compile -j1 V=sc 
           
       - name: 生成软件包索引文件（Packages和Packages.gz），用于后续安装和更新
         run: |
