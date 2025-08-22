@@ -182,7 +182,7 @@ endef
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/util \
 		BUILDCC="$(HOSTCC)" \
-		CFLAGS=
+		CFLAGS="" \
 		CPPFLAGS="" \
 		LDFLAGS="" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
