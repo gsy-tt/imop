@@ -262,7 +262,7 @@ endef
 
 define Package/libe2p/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libe2p.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/lib/libe2p.so.* $(1)/usr/lib/
 endef
 
 define Package/libcomerr/install
