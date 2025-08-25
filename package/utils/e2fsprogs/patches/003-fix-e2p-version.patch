@@ -1,0 +1,13 @@
+--- a/lib/e2p/Makefile.in
++++ b/lib/e2p/Makefile.in
+@@ -26,8 +26,8 @@ SHARE_FILES= e2p.h
+ LIBRARY= libe2p
+ LIBDIR= e2p
+ 
+-ELF_VERSION = 2.3
+-ELF_SO_VERSION = 2
++ELF_VERSION = 2.0
++ELF_SO_VERSION = 2
+ ELF_IMAGE = libe2p
+ ELF_MYDIR = e2p
+ ELF_INSTALL_DIR = $(root_libdir)

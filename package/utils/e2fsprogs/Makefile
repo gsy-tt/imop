@@ -196,7 +196,10 @@ define Build/Compile
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/lib/e2p \
 		BUILDCC="$(HOSTCC)" \
+		LDFLAGS="$(TARGET_LDFLAGS) -Wl,-soname,libe2p.so.2" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
+	# 确保库文件存在
+	ls -la $(PKG_BUILD_DIR)/lib/libe2p.so*
 	# 最后编译主程序
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
