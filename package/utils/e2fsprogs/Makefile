@@ -187,12 +187,17 @@ define Build/Compile
 		LDFLAGS="" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		subst
-	# 先编译libe2p库
+	# 按照依赖顺序编译库
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/lib/et \
+		BUILDCC="$(HOSTCC)" \
+		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/lib/ext2fs \
+		BUILDCC="$(HOSTCC)" \
+		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/lib/e2p \
 		BUILDCC="$(HOSTCC)" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
-	# 再编译主程序
+	# 最后编译主程序
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
