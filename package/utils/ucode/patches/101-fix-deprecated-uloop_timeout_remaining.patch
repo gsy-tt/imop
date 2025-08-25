@@ -1,6 +1,6 @@
 --- a/lib/uloop.c
 +++ b/lib/uloop.c
-@@ -494,7 +494,7 @@ uc_uloop_timer_remaining(uc_vm_t *vm, siz
+@@ -494,7 +494,7 @@ uc_uloop_timer_remaining(uc_vm_t *vm, size_t nargs)
  		return NULL;
  	}
  
