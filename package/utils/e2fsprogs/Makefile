@@ -264,7 +264,15 @@ define Package/libe2p/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libe2p.so.* $(1)/usr/lib/
 	# 确保创建正确的符号链接
-	$(LN) libe2p.so.2.0 $(1)/usr/lib/libe2p.so.2
+	cd $(1)/usr/lib && \
+	for file in libe2p.so.*.*; do \
+		if [ -f "$$file" ]; then \
+			base=$$(echo $$file | sed 's/libe2p\.so\.//'); \
+			$(LN) $$file libe2p.so.2; \
+			$(LN) $$file libe2p.so; \
+			break; \
+		fi; \
+	done
 endef
 
 define Package/libcomerr/install
