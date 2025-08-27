@@ -44,6 +44,15 @@ jobs:
           
           echo "清理完成: $(df -h /)"
 
+      - name: 更新feeds
+        run: |
+          ./scripts/feeds update -a
+          cp .config .config-bak
+      - name: 安装feeds
+        run: |
+          ./scripts/feeds install -a
+          cp .config-bak .config
+          
       - name: 编译工具链
         run: |
           make toolchain/compile -j$(nproc) V=sc 

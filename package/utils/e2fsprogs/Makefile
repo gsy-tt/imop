@@ -263,31 +263,16 @@ endef
 define Package/libe2p/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libe2p.so.* $(1)/usr/lib/
-	# 确保创建正确的符号链接
+	# 创建符号链接
 	cd $(1)/usr/lib && \
-	# 列出所有libe2p文件用于调试
-	ls -la libe2p.so* && \
-	# 首先尝试找到实际的库文件
-	if [ -f libe2p.so.2.0 ]; then \
-		echo "Found libe2p.so.2.0, creating symlinks" && \
-		$(LN) libe2p.so.2.0 libe2p.so.2 && \
-		$(LN) libe2p.so.2.0 libe2p.so; \
-	elif [ -f libe2p.so.2 ]; then \
-		echo "Found libe2p.so.2, creating libe2p.so symlink" && \
-		$(LN) libe2p.so.2 libe2p.so; \
-	else \
-		echo "Searching for libe2p.so.*.* files" && \
 		for file in libe2p.so.*.*; do \
 			if [ -f "$$file" ]; then \
-				echo "Found $$file, creating symlinks" && \
-				$(LN) $$file libe2p.so.2 && \
-				$(LN) $$file libe2p.so && \
+				base=$${file%.*.*} && \
+				$(LN) "$$file" "$$base.2" && \
+				$(LN) "$$file" "$$base" && \
 				break; \
 			fi; \
-		done; \
-	fi && \
-	# 验证符号链接是否创建成功
-	ls -la libe2p.so*
+		done
 endef
 
 define Package/libcomerr/install
