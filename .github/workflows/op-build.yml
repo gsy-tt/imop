@@ -51,7 +51,7 @@ jobs:
       - name: 安装feeds
         run: |
           ./scripts/feeds install -a
-          cp .config-bak .config
+          #cp .config-bak .config
           
       - name: 编译工具链
         run: |
