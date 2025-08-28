@@ -1,0 +1,14 @@
+/dts-v1/;
+
+/ {
+	model = "Test";
+	compatible = "test";
+};
+
+/* USB 3.0 interface */
+&usb3 {
+	compatible = "qcom,dwc3";
+	reg = <0x08800000 0x10000>;
+	interrupts = <0 37 0>;
+	status = "okay";
+};

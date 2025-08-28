@@ -1,0 +1,20 @@
+/dts-v1/;
+
+/ {
+ model = "IPQ5332 USB Test";
+ compatible = "qcom,ipq5332";
+ #address-cells = <2>;
+ #size-cells = <2>;
+
+ interrupt-parent = <&intc>;
+
+
+ usb3: usb@8af8800 {
+  compatible = "qcom,dwc3";
+  reg = <0x0 0x08af8800 0x0 0x400>;
+  interrupts = <0 37 0>;
+  clocks = <&gcc GCC_USB30_MASTER_CLK>;
+  clock-names = "core";
+  status = "okay";
+ };
+};

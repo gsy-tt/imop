@@ -1,0 +1,33 @@
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/qcom,ipq5332-gcc.h>
+#include "ipq5332.dtsi"
+
+/ {
+	model = "JDCloud BE6500 Test";
+	compatible = "jdcloud,be6500", "qcom,ipq5332";
+
+	/* Power regulator */
+	vreg_usb3: regulator-usb3 {
+		compatible = "qcom,pm8005-regulator";
+		regulator-name = "vdd-usb3-3.3v";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+	};
+};
+
+/* USB 3.0 interface */
+&usb3 {
+	compatible = "qcom,dwc3";
+	reg = <0x08800000 0x10000>;
+	interrupts = <0 37 0>;
+	clocks = <&gcc GCC_USB30_MASTER_CLK>,
+	         <&gcc GCC_USB30_SLEEP_CLK>;
+	clock-names = "core", "sleep";
+	dr_mode = "host";
+	vbus-supply = <&vreg_usb3>;
+	status = "okay";
+};

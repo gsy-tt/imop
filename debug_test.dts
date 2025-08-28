@@ -1,0 +1,27 @@
+/dts-v1/;
+
+/ {
+	model = "Test";
+	compatible = "test";
+
+	/* Power regulator */
+	vreg_usb3: regulator-usb3 {
+		compatible = "qcom,pm8005-regulator";
+		regulator-name = "vdd-usb3-3.3v";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+	};
+};
+
+/* USB 3.0 interface */
+&usb3 {
+	compatible = "qcom,dwc3";
+	reg = <0x08800000 0x10000>;
+	interrupts = <0 37 0>;
+	clocks = <&gcc GCC_USB30_MASTER_CLK>;
+	clock-names = "core";
+	dr_mode = "host";
+	vbus-supply = <&vreg_usb3>;
+	status = "okay";
+};
