@@ -19,7 +19,7 @@ DEFAULT_PACKAGES += \
 
 # 关键修正：用 $(TOPDIR) 拼接绝对路径
 # $(TOPDIR) 是源码根目录，直接指向 ipq807x/dts/Makefile
-#include $(TOPDIR)/target/linux/ipq53xx/dts/Makefile
+include $(TOPDIR)/target/linux/ipq53xx/dts/Makefile
 
 # 关键配置：指定要编译的DTS文件（相对于内核源码的arch/arm64/boot/dts/qcom目录）
 # 假设你的ipq5332-jdcloud-be6500.dts在target/linux/ipq53xx/dts/qcom/下
