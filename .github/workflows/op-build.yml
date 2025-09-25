@@ -55,23 +55,7 @@ jobs:
           #cp .config-bak .config
           make oldconfig
           
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          timeout-minutes: ${{ github.event.inputs.timeout }}
-          limit-access-to-actor: true  # 仅允许触发工作流的用户访问，安全！
-          # enable-ipv6: true  # 可选：绕过部分网络限制时启用
 
-      - name: Display connection instructions (SSH + Web)
-        run: |
-          echo "======================================"
-          echo "【1. SSH 连接方式】"
-          echo "运行以下命令连接：ssh $TMATE_SSH_HOST"
-          echo "======================================"
-          echo "【2. 网页连接方式】"
-          echo "复制链接到浏览器打开：$TMATE_WEB_URL"  # 显式打印网页地址
-          echo "======================================"
-          echo "注意：会话将在 ${{ github.event.inputs.timeout }} 分钟后自动关闭"
       - name: 编译工具链
         run: |
           make toolchain/compile -j$(nproc) V=sc 
