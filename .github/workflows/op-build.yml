@@ -80,14 +80,14 @@ jobs:
         id: collect
         run: |
           # 使用find命令查找所有目标目录
-          TARGET_DIR=$(find bin/targets -mindepth 2 -maxdepth 2 -type d | head -1)
+          TARGET_DIR=$(find ./ -mindepth 2 -maxdepth 2 -type d | head -1)
           if [ -n "$TARGET_DIR" ]; then
             cd "$TARGET_DIR"
             FILES=$(find . -name "*.bin" -o -name "*.img.gz" | sed 's|^\.\/||' | tr '\n' ' ')
             echo "artifact_files=$(echo $FILES | tr ' ' ',')" >> $GITHUB_ENV
             echo "artifact_count=$(echo $FILES | wc -w)" >> $GITHUB_ENV
-            find bin/ -name "*.bin"
-            find bin/ -name "*.img*"
+            find ./ -name "*.bin"
+            find ./ -name "*.img*"
           else
             echo "artifact_files=" >> $GITHUB_ENV
             echo "artifact_count=0" >> $GITHUB_ENV
@@ -98,9 +98,9 @@ jobs:
         with:
           name: be6500-firmware
           path: |
-            $(find bin/targets -name "*.bin" 2>/dev/null | tr '\n' '\n')
-            $(find bin/targets -name "*.img.gz" 2>/dev/null | tr '\n' '\n')
-            $(find bin/targets -type d -name "packages" 2>/dev/null | tr '\n' '\n')
+            $(find ./ -name "*.bin" 2>/dev/null | tr '\n' '\n')
+            $(find ./ -name "*.img.gz" 2>/dev/null | tr '\n' '\n')
+            $(find ./ -type d -name "packages" 2>/dev/null | tr '\n' '\n')
           retention-days: 7
 
       - name: Display firmware information
